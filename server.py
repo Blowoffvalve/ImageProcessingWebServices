@@ -4,6 +4,7 @@ import cv2
 import requests
 import os
 import io
+import random
 
 #global variables
 width = 0
@@ -16,6 +17,7 @@ offsetEntranceLine = 30  #offset of the entrance line above the center of the im
 offsetExitLine = 60
 app = Flask(__name__)
 api = Api(app)
+
 
 @app.route("/")
 def index():
@@ -30,7 +32,7 @@ def imageProcessing():
 	file = request.files['image']
 	file.save("./temp_image.jpg")
 	frame = cv2.imread("./temp_image.jpg")
-	os.remove("./temp_image.jpg")
+	#os.remove("./temp_image.jpg")
 
 	#gray-scale conversion and Gaussian blur filter applying
 	grayFrame = greyScaleConversion(frame)
@@ -39,9 +41,9 @@ def imageProcessing():
 	#Check if a frame has been previously processed and set it as the previous frame.
 	referenceFrame = blurredFrame
 	if os.path.exists("./previousImage.jpg"):
-		referenceFrame = cv2.imread("./previousImage.jpg")
+		referenceFrame = cv2.imread("./previousImage.jpg")[:,:,0]
 	#Background subtraction and image binarization
-	frameDelta = getImageDiff(referenceFrame[:,:,0], blurredFrame)
+	frameDelta = getImageDiff(referenceFrame, blurredFrame)
 	cv2.imwrite("previousImage.jpg", blurredFrame)
 	frameThresh = thresholdImage(frameDelta, binarizationThreshold)
 
@@ -50,16 +52,19 @@ def imageProcessing():
 	cv2.imwrite("dilatedFrame.jpg", dilatedFrame)
 	cnts = getContours(dilatedFrame.copy())
 	print(len(cnts))
+
 	for c in cnts:
 		if cv2.contourArea(c) < minContourArea:
 			continue
 		(x, y, w, h) = getContourBound(c)
 		#grab an area 2 times larger than the contour.
-		cntImage  = frame[y:y+2*w, x:x+2*h]
+		cntImage  = frame[y:y+int(1.2*w), x:x+int(1.2*h)]
 		headers = {"enctype" : "multipart/form-data"}
-		cv2.imwrite("contour.jpg", cntImage)
-		files = {"image":open("contour.jpg", "rb")}
+		i = random.randint(1,1000)
+		cv2.imwrite("ContourImages/contour"+str(i)+".jpg", cntImage)
+		files = {"image":open("ContourImages/contour"+str(i)+".jpg", "rb")}
 		r = requests.post("http://" + getNextServer() + "/objectClassifier", headers = headers, files = files )
+
 	
 	return send_file("dilatedFrame.jpg", mimetype = "image/jpg", as_attachment = True, attachment_filename="as.jpg")
 

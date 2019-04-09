@@ -3,6 +3,7 @@ import math
 import cv2
 import numpy as np
 
+
 video = cv2.VideoCapture("Road traffic video for object recognition.mp4")
 
 def getNextServer():
@@ -24,7 +25,9 @@ while True:
     #if cannot grab a frame, this program ends here.
     if not grabbed:
         break
+    cv2.imwrite("Frame.jpg", frame)
 
-    r = requests.post("http://" + getNextServer() + "/imageProcessing", data = {"image":frame})
+    r = requests.post("http://" + getNextServer() + "/imageProcessing", files = {'image' : open("Frame.jpg", "rb")})
     print(r)
-    break
+    if r == "<Response [500]>":
+        break
