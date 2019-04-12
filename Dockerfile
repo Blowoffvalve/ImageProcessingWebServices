@@ -7,6 +7,7 @@ RUN unzip yolo_weights.zip
 RUN git clone https://github.com/Blowoffvalve/ImageProcessingWebServices.git
 WORKDIR ImageProcessingWebServices
 RUN cp ../yolo-object-detection/yolo-coco/yolov3.weights ./YOLO/
+RUN rm -r ../yolo-object-detection/ ../yolo_weights.zip
 RUN pip install flask flask_restful opencv_contrib_python numpy requests
 ENTRYPOINT ["python"]
 CMD ["server.py"]
