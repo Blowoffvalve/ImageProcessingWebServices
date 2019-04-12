@@ -5,13 +5,15 @@ import requests
 import os
 import io
 import random
+import numpy as np
+import time
 
 #global variables
 width = 0
 height = 0
 entranceCounter = 0
 exitCounter = 0
-minContourArea = 600  #Adjust ths value according to tweak the size of the moving object found
+minContourArea = 300  #Adjust ths value according to tweak the size of the moving object found
 binarizationThreshold = 30  #Adjust ths value to tweak the binarization
 offsetEntranceLine = 30  #offset of the entrance line above the center of the image
 offsetExitLine = 60
@@ -54,6 +56,7 @@ def imageProcessing():
 	print(len(cnts))
 
 	for c in cnts:
+		print("x")
 		if cv2.contourArea(c) < minContourArea:
 			continue
 		(x, y, w, h) = getContourBound(c)
@@ -66,20 +69,99 @@ def imageProcessing():
 		r = requests.post("http://" + getNextServer() + "/objectClassifier", headers = headers, files = files )
 
 	
-	return send_file("dilatedFrame.jpg", mimetype = "image/jpg", as_attachment = True, attachment_filename="as.jpg")
+	return Response(status=200)
 
 @app.route("/objectClassifier", methods = ["POST"])
 def classifier():
 	"""
 	Classify an object as either a car or a pedestrian.
 	"""
+	print(1)
+	#initialize important variables
+	minConfidence = 0.5
+	thresholdValue = 0.3
+	
 	file = request.files['image']
 	file.save("./classifier_image.jpg")
 	frame = cv2.imread("./classifier_image.jpg")
-	os.remove("./classifier_image.jpg")
-	cv2.imwrite("image.jpg", frame)
-	resp= Response("True")
-	return resp
+	
+	#Load YOLO weights from disk
+	yolodir = "./yolo/"
+	labelsPath = os.path.sep.join([yolodir, "coco.names"])
+	LABELS = open(labelsPath).read().strip().split("\n")
+	np.random.seed(42)
+	COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
+	weightsPath = os.path.sep.join([yolodir, "yolov3.weights"])
+	configPath = os.path.sep.join([yolodir, "yolov3.cfg"])
+	net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
+	
+	#Get Image dimensions
+	image = cv2.copyMakeBorder(frame, 30, 30, 30, 30, cv2.BORDER_CONSTANT, value=255)
+	(H, W) = image.shape[:2]
+	
+	#Get the output layers parameters
+	ln = net.getLayerNames()
+	ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+	
+	#Create a blob to do a forward pass
+	blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416), swapRB=True, crop=False)
+	net.setInput(blob)
+	layerOutputs = net.forward(ln)
+	
+	boxes = []
+	confidences = []
+	classIDs = []
+	for output in layerOutputs:
+		#loop over each detection
+		for detection in output:
+			# extract the class ID and confidence (i.e., probability) of
+			# the current object detection
+			scores = detection[5:]
+			classID = np.argmax(scores)
+			confidence = scores[classID]
+
+			# filter out weak predictions by ensuring the detected
+			# probability is greater than the minimum probability
+			if confidence > minConfidence:
+				# scale the bounding box coordinates back relative to the
+				# size of the image, keeping in mind that YOLO actually
+				# returns the center (x, y)-coordinates of the bounding
+				# box followed by the boxes' width and height
+				box = detection[0:4] * np.array([W, H, W, H])
+				(centerX, centerY, width, height) = box.astype("int")
+
+				# use the center (x, y)-coordinates to derive the top and
+				# and left corner of the bounding box
+				x = int(centerX - (width / 2))
+				y = int(centerY - (height / 2))
+
+				# update our list of bounding box coordinates, confidences,
+				# and class IDs
+				boxes.append([x, y, int(width), int(height)])
+				confidences.append(float(confidence))
+				classIDs.append(classID)
+
+	# apply non-maxima suppression to suppress weak, overlapping bounding
+	# boxes
+	idxs = cv2.dnn.NMSBoxes(boxes, confidences, minConfidence, thresholdValue)
+
+	# ensure at least one detection exists
+	if len(idxs) > 0:
+		# loop over the indexes we are keeping
+		for i in idxs.flatten():
+			# extract the bounding box coordinates
+			(x, y) = (boxes[i][0], boxes[i][1])
+			(w, h) = (boxes[i][2], boxes[i][3])
+
+			# draw a bounding box rectangle and label on the image
+			color = [int(c) for c in COLORS[classIDs[i]]]
+			cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
+			text = "{}: {:.4f}".format(LABELS[classIDs[i]], confidences[i])
+			print(LABELS[classIDs[i]])
+			cv2.putText(image, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+		return LABELS[classIDs[i]]
+	else:
+		return Response(status=200)
 
 def getNextServer():
 	file = open("NextServer.txt", "r")
