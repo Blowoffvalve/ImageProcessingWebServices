@@ -42,4 +42,4 @@ while True:
 	if r == "<Response [500]>":
 		break
 print("Average FPS = {}".format(round(np.mean(FPS), 3)))
-print("RunTimeInSeconds = {}".format(round(frameStartTime - startTime, 3)
+print("RunTimeInSeconds = {}".format(round(frameStartTime - startTime, 3)))
