@@ -1,4 +1,4 @@
-from flask import Flask, request, url_for, send_file, Response
+from flask import Flask, request, url_for, send_file, Response, jsonify
 from flask_restful import Resource, Api
 import cv2
 import requests
@@ -21,6 +21,7 @@ offsetEntranceLine = 30  #offset of the entrance line above the center of the im
 offsetExitLine = 60
 yolodir = "./yolo/"
 outputFile = "output.txt"
+
 
 #Prep the DNN
 labelsPath = os.path.sep.join([yolodir, "coco.names"])
@@ -121,15 +122,6 @@ def classifier():
 	file.save("./classifier_image.jpg")
 	frame = cv2.imread("./classifier_image.jpg")
 	
-	"""#Load YOLO weights from disk
-	labelsPath = os.path.sep.join([yolodir, "coco.names"])
-	LABELS = open(labelsPath).read().strip().split("\n")
-	np.random.seed(42)
-	#COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
-	weightsPath = os.path.sep.join([yolodir, "yolov3.weights"])
-	configPath = os.path.sep.join([yolodir, "yolov3.cfg"])
-	net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
-	"""
 	#Get Image dimensions
 	image = cv2.copyMakeBorder(frame, 30, 30, 30, 30, cv2.BORDER_CONSTANT, value=255)
 	(H, W) = image.shape[:2]
@@ -194,10 +186,20 @@ def classifier():
 			print(LABELS[classIDs[i]], output[LABELS[classIDs[i]]]+1, confidences[i])
 			output[LABELS[classIDs[i]]]+=1
 		
-		json.dump(output, open("output.txt", "w"))
+		json.dump(output, open(outputFile, "w"))
 		return LABELS[classIDs[i]]
 	else:
 		return Response(status=200)
+
+
+@app.route("/getCounts", methods = ["GET"])
+def getCounts():
+	retval ={}
+	output = json.load(open(outputFile))
+	for key, val in output.items():
+		if val >=1:
+			retval[key] = val
+	return jsonify(retval)
 
 def getNextServer():
 	file = open("NextServer.txt", "r")
