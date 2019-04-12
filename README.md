@@ -5,7 +5,7 @@
 The following endpoints currently exist.
 
 1. /frameProcessing: This uses openCv methods to find the objects that have changed from a preceding frame. It sends each object to /classifier.
-2. /objectClassifier: This is a deep learning model that attempts to classify an image into a fixed set of classes. It increments the [counter](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/output.txt) for that object class.
+2. /objectClassifier: This is a deep learning model(Yolo-V3 trained on COCO) that attempts to classify an image into a fixed set of classes. It increments the [counter](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/output.txt) for that object class.
 3. /init: This initializes all counters to 0
 4. /getCounts: This retrieves the current value of the counters.
 
