@@ -2,11 +2,16 @@
 
 ## Object Detection
 [server.py](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/server.py) implements a RESTFUL webservice for object detection.
-2 Endpoints currently exist
+The following endpoints currently exist.
 
-1. /imageProcessing: This uses openCv methods to find the objects that have changed from a preceding frame. It sends each object to /classifier.
-2. /classifier: This is a deep learning model that attempts to classify an image into a fixed set of classes.
+1. /frameProcessing: This uses openCv methods to find the objects that have changed from a preceding frame. It sends each object to /classifier.
+2. /objectClassifier: This is a deep learning model that attempts to classify an image into a fixed set of classes. It increments the counter for that object class to 0
+3. /init: This initializes all counters to 0
+4. /getCounts: This retrieves the current value of the counters.
+
 [client.py](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/client.py) reads a video and sends frames to server.py.
+
+[Dockerfile](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/Dockerfile) for starting up a container with the server setup.
 
 ### Setup
 1. Install your virtual environment to have the packages specified in [requirements.txt](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/requirements.txt).
