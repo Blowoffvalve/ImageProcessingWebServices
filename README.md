@@ -11,7 +11,7 @@ The following endpoints currently exist.
 
 [client.py](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/client.py) reads a video and sends frames to server.py.
 
-[Dockerfile](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/Dockerfile) for starting up a container with the server setup.
+[Dockerfile](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/Dockerfile) for starting up a container with the server already running.
 
 ### Setup
 1. Install your virtual environment to have the packages specified in [requirements.txt](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/requirements.txt).
