@@ -3,20 +3,33 @@ from flask_restful import Resource, Api
 import cv2
 import requests
 import os
-import io
+#import io
 import random
 import numpy as np
-import time
+#import time
+import json
+from collections import OrderedDict
 
 #global variables
 width = 0
 height = 0
 entranceCounter = 0
 exitCounter = 0
-minContourArea = 300  #Adjust ths value according to tweak the size of the moving object found
+minContourArea = 40  #Adjust ths value according to tweak the size of the moving object found
 binarizationThreshold = 30  #Adjust ths value to tweak the binarization
 offsetEntranceLine = 30  #offset of the entrance line above the center of the image
 offsetExitLine = 60
+yolodir = "./yolo/"
+outputFile = "output.txt"
+
+#Prep the DNN
+labelsPath = os.path.sep.join([yolodir, "coco.names"])
+LABELS = open(labelsPath).read().strip().split("\n")
+weightsPath = os.path.sep.join([yolodir, "yolov3.weights"])
+configPath = os.path.sep.join([yolodir, "yolov3.cfg"])
+net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
+
+
 app = Flask(__name__)
 api = Api(app)
 
@@ -24,11 +37,25 @@ api = Api(app)
 @app.route("/")
 def index():
 	return "Image processing functional decomposition"
-
-@app.route("/imageProcessing", methods = ["POST"])
-def imageProcessing():
+	
+@app.route("/init", methods = ["POST"])
+def init():
 	"""
-	Convert an image from RGB to Grayscale
+	Re-initialize the object counter to 0 for all objects.
+	"""
+	print("Initializing Application")
+	labelDict = {}
+	labelsPath = os.path.sep.join([yolodir, "coco.names"])
+	LABELS = open(labelsPath).read().strip().split("\n")
+	for label in LABELS:
+		labelDict[label] = 0
+	json.dump(labelDict, open(outputFile, "w"))	
+	return "Output Counter Initialized"
+
+@app.route("/frameProcessing", methods = ["POST"])
+def frameProcessing():
+	"""
+	Receive the frames from a video sequentially and count the number of objects. Each object is sent to a classifier which saves the count of objects that have been seen.
 	"""
 	#receive the image from the request.
 	file = request.files['image']
@@ -53,15 +80,24 @@ def imageProcessing():
 	dilatedFrame = dilateImage(frameThresh)
 	cv2.imwrite("dilatedFrame.jpg", dilatedFrame)
 	cnts = getContours(dilatedFrame.copy())
-	print(len(cnts))
-
+	
+	height = np.size(frame,0)
+	coordYEntranceLine = int((height / 2)-offsetEntranceLine)
+	coordYExitLine = int((height / 2)+offsetExitLine)
+	
 	for c in cnts:
 		print("x")
 		if cv2.contourArea(c) < minContourArea:
+			print("Small Area", cv2.contourArea(c))
 			continue
 		(x, y, w, h) = getContourBound(c)
 		#grab an area 2 times larger than the contour.
-		cntImage  = frame[y:y+int(1.2*w), x:x+int(1.2*h)]
+		cntImage  = frame[y:y+int(1.5*w), x:x+int(1.5*h)]
+		objectCentroid = getContourCentroid(x, y, w, h)
+		coordYCentroid = (y+y+h)/2
+		
+		
+		#if (checkEntranceLineCrossing(coordYCentroid,coordYEntranceLine,coordYExitLine)):				
 		headers = {"enctype" : "multipart/form-data"}
 		i = random.randint(1,1000)
 		cv2.imwrite("ContourImages/contour"+str(i)+".jpg", cntImage)
@@ -74,9 +110,9 @@ def imageProcessing():
 @app.route("/objectClassifier", methods = ["POST"])
 def classifier():
 	"""
-	Classify an object as either a car or a pedestrian.
+	Classify an object and update the counter maintained at output.txt.
 	"""
-	print(1)
+	print("Classifying")
 	#initialize important variables
 	minConfidence = 0.5
 	thresholdValue = 0.3
@@ -85,16 +121,15 @@ def classifier():
 	file.save("./classifier_image.jpg")
 	frame = cv2.imread("./classifier_image.jpg")
 	
-	#Load YOLO weights from disk
-	yolodir = "./yolo/"
+	"""#Load YOLO weights from disk
 	labelsPath = os.path.sep.join([yolodir, "coco.names"])
 	LABELS = open(labelsPath).read().strip().split("\n")
 	np.random.seed(42)
-	COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
+	#COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
 	weightsPath = os.path.sep.join([yolodir, "yolov3.weights"])
 	configPath = os.path.sep.join([yolodir, "yolov3.cfg"])
 	net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
-	
+	"""
 	#Get Image dimensions
 	image = cv2.copyMakeBorder(frame, 30, 30, 30, 30, cv2.BORDER_CONSTANT, value=255)
 	(H, W) = image.shape[:2]
@@ -106,12 +141,14 @@ def classifier():
 	#Create a blob to do a forward pass
 	blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416), swapRB=True, crop=False)
 	net.setInput(blob)
+	#print(H, W)
 	layerOutputs = net.forward(ln)
-	
+	print(type(net))
 	boxes = []
 	confidences = []
 	classIDs = []
 	for output in layerOutputs:
+		print("detecting")
 		#loop over each detection
 		for detection in output:
 			# extract the class ID and confidence (i.e., probability) of
@@ -147,18 +184,17 @@ def classifier():
 
 	# ensure at least one detection exists
 	if len(idxs) > 0:
+		output = json.load(open(outputFile))
 		# loop over the indexes we are keeping
 		for i in idxs.flatten():
 			# extract the bounding box coordinates
 			(x, y) = (boxes[i][0], boxes[i][1])
 			(w, h) = (boxes[i][2], boxes[i][3])
 
-			# draw a bounding box rectangle and label on the image
-			color = [int(c) for c in COLORS[classIDs[i]]]
-			cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
-			text = "{}: {:.4f}".format(LABELS[classIDs[i]], confidences[i])
-			print(LABELS[classIDs[i]])
-			cv2.putText(image, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+			print(LABELS[classIDs[i]], output[LABELS[classIDs[i]]]+1, confidences[i])
+			output[LABELS[classIDs[i]]]+=1
+		
+		json.dump(output, open("output.txt", "w"))
 		return LABELS[classIDs[i]]
 	else:
 		return Response(status=200)
@@ -167,6 +203,26 @@ def getNextServer():
 	file = open("NextServer.txt", "r")
 	return file.read()
 
+	
+def getContourCentroid(x, y, w, h):
+    """
+    Get the centroid/center of the countours you have
+    @return: The coordinates of the  center points
+    """
+    coordXCentroid = (x+x+w)/2
+    coordYCentroid = (y+y+h)/2
+    objectCentroid = (int(coordXCentroid),int(coordYCentroid))
+    return objectCentroid
+	
+#Check if an object in entering in monitored zone
+def checkEntranceLineCrossing(y, coorYEntranceLine, coorYExitLine):
+    absDistance = abs(y - coorYEntranceLine)
+
+    if ((absDistance <= 2) and (y < coorYExitLine)):
+        return 1
+    else:
+        return 0
+	
 def getContours(frame):
     """
     Get the contours in the frame 
