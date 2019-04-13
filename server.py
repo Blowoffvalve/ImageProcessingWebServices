@@ -203,7 +203,7 @@ def getCounts():
 
 def getNextServer():
 	file = open("NextServer.txt", "r")
-	return file.read()
+	return file.read()[:-1]
 
 	
 def getContourCentroid(x, y, w, h):
