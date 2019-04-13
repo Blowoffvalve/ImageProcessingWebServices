@@ -19,7 +19,7 @@ minContourArea = 40  #Adjust ths value according to tweak the size of the moving
 binarizationThreshold = 30  #Adjust ths value to tweak the binarization
 offsetEntranceLine = 30  #offset of the entrance line above the center of the image
 offsetExitLine = 60
-yolodir = "./yolo/"
+yolodir = "./YOLO"
 outputFile = "output.txt"
 
 
