@@ -14,8 +14,9 @@ video = cv2.VideoCapture("Road traffic video for object recognition.mp4")
 
 def getNextServer():
 	file = open("NextServer.txt", "r")
-	return file.read()
+	return file.read()[:-1]
 
+uri = "http://" + getNextServer() + "/frameProcessing"
 #force 640x480 webcam resolution
 video.set(3,640)
 video.set(4,480)
@@ -35,7 +36,7 @@ while True:
 		break
 	cv2.imwrite("Frame.jpg", frame)
 
-	r = requests.post("http://" + getNextServer() + "/frameProcessing", files = {'image' : open("Frame.jpg", "rb")})
+	r = requests.post(uri, files = {'image' : open("Frame.jpg", "rb")})
 	currentFPS = 1.0/(time.time() - frameStartTime)
 	FPS.append(currentFPS)
 	print(r, round(np.mean(FPS), 3))
