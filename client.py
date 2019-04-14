@@ -39,7 +39,7 @@ while True:
 	r = requests.post(uri, files = {'image' : open("Frame.jpg", "rb")})
 	currentFPS = 1.0/(time.time() - frameStartTime)
 	FPS.append(currentFPS)
-	print(r, round(np.mean(FPS), 3))
+	print("response = {}, frame = {}, fps = {} ".format(r, frameCount, round(np.mean(FPS), 3) )
 	if r == "<Response [500]>":
 		break
 print("Average FPS = {}".format(round(np.mean(FPS), 3)))
