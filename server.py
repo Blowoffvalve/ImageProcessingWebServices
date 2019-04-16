@@ -21,7 +21,8 @@ offsetEntranceLine = 30  #offset of the entrance line above the center of the im
 offsetExitLine = 60
 yolodir = "./YOLO"
 outputFile = "output.txt"
-
+referenceFrame = 0
+dilatedFrame = 0
 
 #Prep the DNN
 labelsPath = os.path.sep.join([yolodir, "coco.names"])
@@ -58,23 +59,24 @@ def frameProcessing():
 	"""
 	Receive the frames from a video sequentially and count the number of objects. Each object is sent to a classifier which saves the count of objects that have been seen.
 	"""
+	global referenceFrame
+	global dilatedFrame
 	#receive the image from the request.
-	file = request.files['image']
-	file.save("./temp_image.jpg")
-	frame = cv2.imread("./temp_image.jpg")
-	#os.remove("./temp_image.jpg")
-
+	file = request.json
+	frame = np.array(file["Frame"], dtype = "uint8")
+	
 	#gray-scale conversion and Gaussian blur filter applying
 	grayFrame = greyScaleConversion(frame)
 	blurredFrame = gaussianBlurring(grayFrame)
 
 	#Check if a frame has been previously processed and set it as the previous frame.
-	referenceFrame = blurredFrame
-	if os.path.exists("./previousImage.jpg"):
-		referenceFrame = cv2.imread("./previousImage.jpg")[:,:,0]
+	if type(referenceFrame) ==int():
+		referenceFrame = blurredFrame
+	
 	#Background subtraction and image binarization
 	frameDelta = getImageDiff(referenceFrame, blurredFrame)
-	cv2.imwrite("previousImage.jpg", blurredFrame)
+	referenceFrame = blurredFrame
+	#cv2.imwrite("previousImage.jpg", blurredFrame)
 	frameThresh = thresholdImage(frameDelta, binarizationThreshold)
 
 	#Dilate image and find all the contours

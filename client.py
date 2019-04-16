@@ -34,12 +34,13 @@ while True:
     #if cannot grab a frame, this program ends here.
 	if not grabbed:
 		break
-	cv2.imwrite("Frame.jpg", frame)
-
-	r = requests.post(uri, files = {'image' : open("Frame.jpg", "rb")})
+	#cv2.imwrite("Frame.jpg", frame)
+	#print(frame.shape)
+	data = {"Frame":frame.tolist()}
+	r = requests.post(uri, json = data)
 	currentFPS = 1.0/(time.time() - frameStartTime)
 	FPS.append(currentFPS)
-	print("response = {}, frame = {}, fps = {} ".format(r, frameCount, round(np.mean(FPS), 3) )
+	print("response = {}, frame = {}, fps = {} ".format(r, frameCount, round(currentFPS, 3) ))
 	if r == "<Response [500]>":
 		break
 print("Average FPS = {}".format(round(np.mean(FPS), 3)))
