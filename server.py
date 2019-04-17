@@ -81,7 +81,7 @@ def frameProcessing():
 
 	#Dilate image and find all the contours
 	dilatedFrame = dilateImage(frameThresh)
-	cv2.imwrite("dilatedFrame.jpg", dilatedFrame)
+	#cv2.imwrite("dilatedFrame.jpg", dilatedFrame)
 	cnts = getContours(dilatedFrame.copy())
 	
 	height = np.size(frame,0)
@@ -102,10 +102,11 @@ def frameProcessing():
 		
 		#if (checkEntranceLineCrossing(coordYCentroid,coordYEntranceLine,coordYExitLine)):				
 		headers = {"enctype" : "multipart/form-data"}
-		i = random.randint(1,1000)
-		cv2.imwrite("ContourImages/contour"+str(i)+".jpg", cntImage)
-		files = {"image":open("ContourImages/contour"+str(i)+".jpg", "rb")}
-		r = requests.post("http://" + getNextServer() + "/objectClassifier", headers = headers, files = files )
+		#i = random.randint(1,1000)
+		#cv2.imwrite("ContourImages/contour"+str(i)+".jpg", cntImage)
+		#files = {"image":open("ContourImages/contour"+str(i)+".jpg", "rb")}
+		data = {"contour" : cntImage.tolist()}
+		r = requests.post("http://" + getNextServer() + "/objectClassifier", headers = headers, json = data )
 
 	
 	return Response(status=200)
@@ -120,9 +121,12 @@ def classifier():
 	minConfidence = 0.5
 	thresholdValue = 0.3
 	
-	file = request.files['image']
-	file.save("./classifier_image.jpg")
-	frame = cv2.imread("./classifier_image.jpg")
+	#file = request.files['image']
+	#file.save("./classifier_image.jpg")
+	#frame = cv2.imread("./classifier_image.jpg")
+	file = request.json
+	frame = np.array(file["contour"], dtype="uint8")
+
 	
 	#Get Image dimensions
 	image = cv2.copyMakeBorder(frame, 30, 30, 30, 30, cv2.BORDER_CONSTANT, value=255)
