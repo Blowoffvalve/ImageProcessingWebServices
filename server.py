@@ -87,7 +87,7 @@ def frameProcessing():
 	height = np.size(frame,0)
 	coordYEntranceLine = int((height / 2)-offsetEntranceLine)
 	coordYExitLine = int((height / 2)+offsetExitLine)
-	
+	"""
 	for c in cnts:
 		print("x")
 		if cv2.contourArea(c) < minContourArea:
@@ -106,8 +106,9 @@ def frameProcessing():
 		cv2.imwrite("ContourImages/contour"+str(i)+".jpg", cntImage)
 		files = {"image":open("ContourImages/contour"+str(i)+".jpg", "rb")}
 		r = requests.post("http://" + getNextServer() + "/objectClassifier", headers = headers, files = files )
-
-	
+	"""
+	headers = {"enctype" : "multipart/form-data"}
+	r = requests.post("http://" + getNextServer() + "/objectClassifier", headers = headers, json = {"Frame":frame.tolist()} )
 	return Response(status=200)
 
 @app.route("/objectClassifier", methods = ["POST"])
@@ -120,9 +121,13 @@ def classifier():
 	minConfidence = 0.5
 	thresholdValue = 0.3
 	
-	file = request.files['image']
+	"""
+	file = request.files#['image']
 	file.save("./classifier_image.jpg")
 	frame = cv2.imread("./classifier_image.jpg")
+	"""
+	file = request.json
+	frame = np.array(file["Frame"], dtype = "uint8") 
 	
 	#Get Image dimensions
 	image = cv2.copyMakeBorder(frame, 30, 30, 30, 30, cv2.BORDER_CONSTANT, value=255)
@@ -203,6 +208,10 @@ def getCounts():
 			retval[key] = val
 	return jsonify(retval)
 
+@app.route("/setNextServer", methods = ["POST"])
+def setNextServer():
+	json.dump(request.json, open("NextServer.txt", "w"))
+	
 def getNextServer():
 	file = open("NextServer.txt", "r")
 	return file.read()[:-1]
