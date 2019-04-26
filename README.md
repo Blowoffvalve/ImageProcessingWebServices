@@ -15,7 +15,9 @@ The following endpoints currently exist.
 
 ### Setup
 1. Install your virtual environment to have the packages specified in [requirements.txt](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/requirements.txt).
+2. Clone the repository.
 2. Start the server by the flask app [server.py](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/server.py).
+3. Download the YOLO weights from [here](https://t.dripemail2.com/c/eyJhY2NvdW50X2lkIjoiNDc2ODQyOSIsImRlbGl2ZXJ5X2lkIjoiNjA5MjA5NTM2NCIsInVybCI6Imh0dHBzOi8vczMtdXMtd2VzdC0yLmFtYXpvbmF3cy5jb20vc3RhdGljLnB5aW1hZ2VzZWFyY2guY29tL29wZW5jdi15b2xvL3lvbG8tb2JqZWN0LWRldGVjdGlvbi56aXA_X19zPXFhZWJ1cHdpeGlzbjdmb2JqZnMzIn0) and save them to YOLO/
 
 ### Test
 1. Unzip [testImages.rar](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/testImages.rar) to the same directory as server.py
