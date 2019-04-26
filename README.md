@@ -20,5 +20,6 @@ The following endpoints currently exist.
 3. Download the YOLO weights from [here](https://t.dripemail2.com/c/eyJhY2NvdW50X2lkIjoiNDc2ODQyOSIsImRlbGl2ZXJ5X2lkIjoiNjA5MjA5NTM2NCIsInVybCI6Imh0dHBzOi8vczMtdXMtd2VzdC0yLmFtYXpvbmF3cy5jb20vc3RhdGljLnB5aW1hZ2VzZWFyY2guY29tL29wZW5jdi15b2xvL3lvbG8tb2JqZWN0LWRldGVjdGlvbi56aXA_X19zPXFhZWJ1cHdpeGlzbjdmb2JqZnMzIn0) and save them to YOLO/
 
 ### Test
-1. Unzip [testImages.rar](https://github.com/Blowoffvalve/ImageProcessingWebServices/blob/master/testImages.rar) to the same directory as server.py
-2. Send Frame.jpg(it is inside testImages.rar) to a newly setup instance of the app.
+1. Run server.py : `python server.py`
+2. Edit NextServer.txt to contain the IP and port(Default is 5000) of the server that is running server.py. If you are running it on the same server, the default value `localhost:5000` should suffice
+3. Run client.py : `python client.py`
