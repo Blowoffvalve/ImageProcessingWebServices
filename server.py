@@ -135,8 +135,8 @@ def classifier():
 	#file = request.files['image']
 	#file.save("./classifier_image.jpg")
 	#frame = cv2.imread("./classifier_image.jpg")
-	file = request.json
-	frame = np.array(file["contour"], dtype="uint8")
+	#file = request.json
+	#frame = np.array(file["contour"], dtype="uint8")
 	
 	#Get Image dimensions
 	image = cv2.copyMakeBorder(frame, 30, 30, 30, 30, cv2.BORDER_CONSTANT, value=255)
