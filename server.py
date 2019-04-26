@@ -87,11 +87,9 @@ def frameProcessing():
 	height = np.size(frame,0)
 	coordYEntranceLine = int((height / 2)-offsetEntranceLine)
 	coordYExitLine = int((height / 2)+offsetExitLine)
-<<<<<<< HEAD
 	headers = {"enctype" : "multipart/form-data"}
 	r = requests.post("http://" + getNextServer() + "/objectClassifier", headers = headers, json = {"Frame":frame.tolist()} )
-=======
-	
+	"""	
 	for c in cnts:
 		print("x")
 		if cv2.contourArea(c) < minContourArea:
@@ -113,7 +111,7 @@ def frameProcessing():
 		r = requests.post("http://" + getNextServer() + "/objectClassifier", headers = headers, json = data )
 
 	
->>>>>>> 130e14d29f076e022dd085a184dcbabb90ab03fb
+	"""
 	return Response(status=200)
 
 @app.route("/objectClassifier", methods = ["POST"])
@@ -126,7 +124,6 @@ def classifier():
 	minConfidence = 0.5
 	thresholdValue = 0.3
 	
-<<<<<<< HEAD
 	"""
 	file = request.files#['image']
 	file.save("./classifier_image.jpg")
@@ -134,14 +131,12 @@ def classifier():
 	"""
 	file = request.json
 	frame = np.array(file["Frame"], dtype = "uint8") 
-=======
+
 	#file = request.files['image']
 	#file.save("./classifier_image.jpg")
 	#frame = cv2.imread("./classifier_image.jpg")
 	file = request.json
 	frame = np.array(file["contour"], dtype="uint8")
-
->>>>>>> 130e14d29f076e022dd085a184dcbabb90ab03fb
 	
 	#Get Image dimensions
 	image = cv2.copyMakeBorder(frame, 30, 30, 30, 30, cv2.BORDER_CONSTANT, value=255)
